@@ -78,8 +78,7 @@
 
   <script>
     let username = prompt("Enter your name") || "Anonymous";
-    const socket = io('http://192.168.1.50:10000');
-    let typingTimeout;
+    const socket = io(window.location.host || 'http://192.168.1.50:10000');
 
     socket.on('connect', () => {
       socket.emit('join', { username: username });
@@ -92,11 +91,6 @@
     socket.on('message', data => {
       document.getElementById('typing').style.display = 'none';
       addMessage(data.user, data.msg, data.timestamp);
-    });
-
-    socket.on('error', data => {
-      console.error('Server error:', data.msg);
-      alert('Error: ' + data.msg);
     });
 
     document.getElementById('msg').addEventListener('input', () => {
@@ -126,6 +120,8 @@
         document.getElementById('typing').style.display = 'none';
       }
     }
+
+    let typingTimeout;
 
     function addMessage(user, msg, timestamp) {
       const chat = document.getElementById('chat');

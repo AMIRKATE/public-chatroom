@@ -1,12 +1,9 @@
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit
-import os
-from html import escape
-from datetime import datetime
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'fallback-secret-key')
-socketio = SocketIO(app, cors_allowed_origins="*")
+app.config['SECRET_KEY'] = 'secret!'
+socketio = SocketIO(app)
 
 chat_history = []
 
@@ -16,36 +13,17 @@ def index():
 
 @socketio.on('join')
 def on_join(data):
-    try:
-        username = escape(data.get('username', 'Anonymous'))
-        emit('chat history', chat_history)
-        join_msg = {'user': 'Server', 'msg': f'{username} has joined the chat', 'timestamp': datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')}
-        chat_history.append(join_msg)
-        emit('message', join_msg, broadcast=True)
-    except Exception as e:
-        emit('error', {'msg': f'Join error: {str(e)}'})
+    username = data['username']
+    emit('chat history', chat_history)
+    join_msg = {'user': 'Server', 'msg': f'{username} has joined the chat'}
+    chat_history.append(join_msg)
+    emit('message', join_msg, broadcast=True)
 
 @socketio.on('message')
 def handle_message(data):
-    try:
-        user = escape(data.get('user', 'Anonymous'))
-        msg = escape(data.get('msg', ''))
-        if msg.strip():
-            chat_entry = {'user': user, 'msg': msg, 'timestamp': datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')}
-            chat_history.append(chat_entry)
-            emit('message', chat_entry, broadcast=True)
-    except Exception as e:
-        emit('error', {'msg': f'Message error: {str(e)}'})
-
-@socketio.on('disconnect')
-def on_disconnect():
-    try:
-        # Note: SocketIO doesn't provide username on disconnect; using 'A user' as placeholder
-        disconnect_msg = {'user': 'Server', 'msg': 'A user has left the chat', 'timestamp': datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')}
-        chat_history.append(disconnect_msg)
-        emit('message', disconnect_msg, broadcast=True)
-    except Exception as e:
-        emit('error', {'msg': f'Disconnect error: {str(e)}'})
+    chat_entry = {'user': data['user'], 'msg': data['msg']}
+    chat_history.append(chat_entry)
+    emit('message', chat_entry, broadcast=True)
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=10000)
