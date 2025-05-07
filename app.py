@@ -37,5 +37,15 @@ def handle_message(data):
     except Exception as e:
         emit('error', {'msg': f'Message error: {str(e)}'})
 
+@socketio.on('disconnect')
+def on_disconnect():
+    try:
+        # Note: SocketIO doesn't provide username on disconnect; using 'A user' as placeholder
+        disconnect_msg = {'user': 'Server', 'msg': 'A user has left the chat', 'timestamp': datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')}
+        chat_history.append(disconnect_msg)
+        emit('message', disconnect_msg, broadcast=True)
+    except Exception as e:
+        emit('error', {'msg': f'Disconnect error: {str(e)}'})
+
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=int(os.environ.get('PORT', 10000)))
+    socketio.run(app, host='0.0.0.0', port=10000)
