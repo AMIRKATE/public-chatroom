@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Chatroom</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    #chat { border: 1px solid #ccc; height: 300px; overflow-y: scroll; padding: 10px; }
+  </style>
+</head>
+<body>
+  <h2>Chatroom</h2>
+  <div id="chat"></div>
+  <input id="msg" placeholder="Type a message..." autocomplete="off" />
+  <button onclick="sendMessage()">Send</button>
+
+  <script>
+    let username = prompt("Enter your name");
+    const socket = io();
+
+    socket.on('connect', () => {
+      socket.emit('join', { username: username });
+    });
+
+    socket.on('chat history', data => {
+      data.forEach(msg => addMessage(msg.user, msg.msg));
+    });
+
+    socket.on('message', data => {
+      addMessage(data.user, data.msg);
+    });
+
+    function sendMessage() {
+      const msg = document.getElementById('msg').value;
+      if (msg.trim() !== '') {
+        socket.emit('message', { user: username, msg: msg });
+        document.getElementById('msg').value = '';
+      }
+    }
+
+    function addMessage(user, msg) {
+      const chat = document.getElementById('chat');
+      chat.innerHTML += `<div><strong>${user}:</strong> ${msg}</div>`;
+      chat.scrollTop = chat.scrollHeight;
+    }
+  </script>
+</body>
+</html>
